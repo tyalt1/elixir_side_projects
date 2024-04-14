@@ -87,13 +87,13 @@ defmodule Toolbox.Types.Result do
   def error(a), do: Error.new(a)
 
   # boolean checks
-  @spec is_ok?(any()) :: boolean()
-  def is_ok?(%Ok{}), do: true
-  def is_ok?(_), do: false
+  @spec ok?(any()) :: boolean()
+  def ok?(%Ok{}), do: true
+  def ok?(_), do: false
 
-  @spec is_error?(any()) :: boolean()
-  def is_error?(%Error{}), do: true
-  def is_error?(_), do: false
+  @spec error?(any()) :: boolean()
+  def error?(%Error{}), do: true
+  def error?(_), do: false
 
   # converts
   @spec unwrap(t()) :: any()

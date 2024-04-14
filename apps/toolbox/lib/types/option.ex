@@ -71,13 +71,13 @@ defmodule Toolbox.Types.Option do
   def new(val), do: Some.new(val)
 
   # boolean
-  @spec is_none?(t()) :: boolean()
-  def is_none?(%None{}), do: true
-  def is_none?(_), do: false
+  @spec none?(t()) :: boolean()
+  def none?(%None{}), do: true
+  def none?(_), do: false
 
-  @spec is_some?(t()) :: boolean()
-  def is_some?(%Some{}), do: true
-  def is_some?(_), do: false
+  @spec some?(t()) :: boolean()
+  def some?(%Some{}), do: true
+  def some?(_), do: false
 
   # coverts
   @spec unwrap(t()) :: any()
