@@ -1,5 +1,5 @@
 defmodule PodcastTranscriber.Podcast.Episode do
-  defstruct title: nil, url: nil, local_file: nil, meta: %{}
+  defstruct show_title: nil, episode_title: nil, url: nil
   alias __MODULE__
 
   @type t :: %Episode{}
@@ -9,54 +9,58 @@ defmodule PodcastTranscriber.Podcast.Episode do
     %{body: rss_body} = Req.get!(rss_feed_url)
     {:ok, rss_feed} = FastRSS.parse_rss(rss_body)
 
-    meta = %{
-      show_title: rss_feed["title"]
-    }
+    show_title = rss_feed["title"]
 
     Enum.map(rss_feed["items"], fn item ->
       %Episode{
-        title: item["title"],
-        url: item["enclosure"]["url"],
-        meta: meta
+        show_title: show_title,
+        episode_title: item["title"],
+        url: item["enclosure"]["url"]
       }
     end)
   end
 
-  @spec local_file(t() | binary()) :: binary()
-  def local_file(%Episode{url: url}) do
-    local_file(url)
+  @spec local_file(t()) :: binary()
+  def local_file(%Episode{url: url, show_title: s_title, episode_title: e_title}) do
+    local_file(url, Path.join(s_title, e_title))
   end
 
-  def local_file(url) when is_binary(url) do
-    download_directory = Path.join(System.tmp_dir!(), "podcast-downloads")
-    filename = URI.parse(url) |> Map.fetch!(:path) |> Path.basename()
-    out_path = Path.join(download_directory, filename)
+  @spec local_file(binary(), binary()) :: binary()
+  def local_file(url, prefix \\ "") when is_binary(url) do
+    local_path =
+      Path.join([
+        System.tmp_dir!(),
+        "podcast-download",
+        prefix,
+        URI.parse(url).path |> Path.basename()
+      ])
 
-    if !File.exists?(out_path) do
-      download_file(url, out_path)
+    if !File.exists?(local_path) do
+      download_file(url, local_path)
     end
 
-    out_path
+    local_path
   end
 
   # download file
   defp download_file(url, out_path) do
+    # make sure path exists
     out_path |> Path.dirname() |> File.mkdir_p!()
     Req.get!(url: url, into: File.stream!(out_path))
   end
 
-  @doc """
-  Takes %Episode and adds local file
-  """
-  def with_local_file(ep = %Episode{url: url}) do
-    %Episode{ep | local_file: local_file(url)}
+  def transcription(ep = %Episode{}) do
+    ep
+    |> local_file()
+    |> transcription()
   end
 
   def transcription(file, opts \\ []) when is_binary(file) do
-    server = case Keyword.get(opts, :server) do
-      nil -> speech_to_text_server()
-      x -> x
-    end
+    server =
+      case Keyword.get(opts, :server) do
+        nil -> speech_to_text_server()
+        x -> x
+      end
 
     start_time = DateTime.utc_now()
     transcription_output = Nx.Serving.run(server, {:file, file})
@@ -68,10 +72,11 @@ defmodule PodcastTranscriber.Podcast.Episode do
     }
   end
 
-  def transcription_to_text(%Episode{meta: %{show_title: title}}, transcription) do
+  def transcription_to_text(%Episode{show_title: title}, transcription) do
     transcription_to_text(title, transcription)
   end
 
+  @spec transcription_to_text(binary(), binary()) :: binary()
   def transcription_to_text(title, transcription) do
     body =
       Enum.map(transcription, fn chunk ->
@@ -88,20 +93,16 @@ defmodule PodcastTranscriber.Podcast.Episode do
     """
   end
 
+  @spec transcription_to_markdown(binary(), binary()) :: Kino.Markdown.t()
   def transcription_to_markdown(title, transcription) do
     transcription_to_text(title, transcription)
     |> Kino.Markdown.new()
   end
 
   # --- UTIL ---
-  @doc """
-  Converts seconds to
 
-  iex> timestamp(0.0)
-  "00:00:00"
-  iex> timestamp(2896.4)
-  "00:48:16"
-  """
+  # timestamp(0.0) => "00:00:00"
+  # timestamp(2896.4) => "00:48:16"
   @spec timestamp(number()) :: binary()
   defp timestamp(seconds) do
     seconds = floor(seconds)
