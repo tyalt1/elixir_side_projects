@@ -7,12 +7,13 @@ To start your Phoenix server:
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## LiveView
 
-## Learn more
+Most of this code was made with `phx.new`. Only 2 files were changed/added.
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+Added this line `lib/liveview_example_web/router.ex`
+```elixir
+live "/counter", Counter
+```
+
+Added `lib/liveview_example_web/live/counter.ex`
