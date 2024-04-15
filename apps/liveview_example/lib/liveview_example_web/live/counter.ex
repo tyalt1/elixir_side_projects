@@ -26,10 +26,11 @@ defmodule LiveviewExampleWeb.Counter do
   # iex> pad_number(3) => "003"
   # iex> pad_number(13) =>"013"
   # iex> pad_number(1300) =>"1300"
-  defp pad_number(n) do
+  # iex> pad_number(1300, 5) =>"01300"
+  defp pad_number(n, digit_len \\ 3) do
     n
     |> to_string()
-    |> String.pad_leading(3, "0")
+    |> String.pad_leading(digit_len, "0")
   end
 
   @spec color_class(:red | :green | :blue) :: binary()
@@ -40,7 +41,7 @@ defmodule LiveviewExampleWeb.Counter do
   attr :click, :string, required: true
   attr :debounce, :integer, default: 20
   attr :class, :string, default: "text-white font-bold py-2 px-4 rounded"
-  attr :color, :string, default: "bg-blue-500 hover:bg-blue-700"
+  attr :color, :string, examples: ["bg-blue-500 hover:bg-blue-700"]
 
   slot :inner_block
 
@@ -57,7 +58,8 @@ defmodule LiveviewExampleWeb.Counter do
 
   @doc false
   @impl true
-  @spec handle_event(binary(), map(), Phoenix.LiveView.Socket.t()) :: {:noreply, Phoenix.LiveView.Socket.t()}
+  @spec handle_event(binary(), map(), Phoenix.LiveView.Socket.t()) ::
+          {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_event("inc", _unsigned_params, socket) do
     socket
     |> update(:counter, fn x -> x + 1 end)
