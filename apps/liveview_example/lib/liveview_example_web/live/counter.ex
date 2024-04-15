@@ -14,12 +14,22 @@ defmodule LiveviewExampleWeb.Counter do
   def render(assigns) do
     ~H"""
     <div class="flex gap-2 items-center">
-      <span><%= String.pad_leading(to_string(@counter), 3, "0") %></span>
+      <span><%= pad_number(@counter) %></span>
       <.my_button click="inc" color={color_class(:green)}>+</.my_button>
       <.my_button click="dec" color={color_class(:red)}>-</.my_button>
-      <.my_button click="reset">reset</.my_button>
+      <.my_button click="reset" color={color_class(:blue)}>reset</.my_button>
     </div>
     """
+  end
+
+  # add leading zeros
+  # iex> pad_number(3) => "003"
+  # iex> pad_number(13) =>"013"
+  # iex> pad_number(1300) =>"1300"
+  defp pad_number(n) do
+    n
+    |> to_string()
+    |> String.pad_leading(3, "0")
   end
 
   @spec color_class(:red | :green | :blue) :: binary()
@@ -34,18 +44,10 @@ defmodule LiveviewExampleWeb.Counter do
 
   slot :inner_block
 
-  @doc """
-  Custom button component
-
-  - click: string for phoenix click event
-  - debounce: number of milliseconds click events with debounce for
-  - class: CSS class, default to "text-white font-bold py-2 px-4 rounded"
-  - color: CSS color class, default to blue
-  """
   @spec my_button(Phoenix.LiveView.Socket.assigns()) :: Phoenix.LiveView.Rendered.t()
-  def my_button(assigns) do
+  defp my_button(assigns) do
     ~H"""
-    <button class={@color <> " " <> @class} phx-click={@click} phx-debounce={@debounce}>
+    <button class={Enum.join([@color, @class], " ")} phx-click={@click} phx-debounce={@debounce}>
       <%= render_slot(@inner_block) %>
     </button>
     """
@@ -55,8 +57,7 @@ defmodule LiveviewExampleWeb.Counter do
 
   @doc false
   @impl true
-  @spec handle_event(event :: binary(), map(), socket :: Phoenix.LiveView.Socket.t()) ::
-          {:noreply, Phoenix.LiveView.Socket.t()}
+  @spec handle_event(binary(), map(), Phoenix.LiveView.Socket.t()) :: {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_event("inc", _unsigned_params, socket) do
     socket
     |> update(:counter, fn x -> x + 1 end)
