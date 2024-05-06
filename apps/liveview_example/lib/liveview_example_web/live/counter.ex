@@ -14,10 +14,10 @@ defmodule LiveviewExampleWeb.Counter do
   def render(assigns) do
     ~H"""
     <div class="flex gap-2 items-center">
-      <span><%= pad_number(@counter) %></span>
-      <.my_button click="inc" color={color_class(:green)}>+</.my_button>
-      <.my_button click="dec" color={color_class(:red)}>-</.my_button>
-      <.my_button click="reset" color={color_class(:blue)}>reset</.my_button>
+      <span class="font-bold"><%= pad_number(@counter) %></span>
+      <.my_button click="inc" color={color_css(:green)}>+</.my_button>
+      <.my_button click="dec" color={color_css(:red)}>-</.my_button>
+      <.my_button click="reset" color={color_css(:blue)}>reset</.my_button>
     </div>
     """
   end
@@ -33,10 +33,10 @@ defmodule LiveviewExampleWeb.Counter do
     |> String.pad_leading(digit_len, "0")
   end
 
-  @spec color_class(:red | :green | :blue) :: binary()
-  defp color_class(:red), do: "bg-red-500 hover:bg-red-700"
-  defp color_class(:green), do: "bg-green-500 hover:bg-green-700"
-  defp color_class(:blue), do: "bg-blue-500 hover:bg-blue-700"
+  @spec color_css(atom()) :: binary()
+  defp color_css(:red), do: "bg-red-500 hover:bg-red-700"
+  defp color_css(:green), do: "bg-green-500 hover:bg-green-700"
+  defp color_css(:blue), do: "bg-blue-500 hover:bg-blue-700"
 
   attr :click, :string, required: true
   attr :debounce, :integer, default: 20
@@ -48,7 +48,7 @@ defmodule LiveviewExampleWeb.Counter do
   @spec my_button(Phoenix.LiveView.Socket.assigns()) :: Phoenix.LiveView.Rendered.t()
   defp my_button(assigns) do
     ~H"""
-    <button class={Enum.join([@color, @class], " ")} phx-click={@click} phx-debounce={@debounce}>
+    <button class={"#{@color} #{@class}"} phx-click={@click} phx-debounce={@debounce}>
       <%= render_slot(@inner_block) %>
     </button>
     """

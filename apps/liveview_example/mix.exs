@@ -77,7 +77,8 @@ defmodule LiveviewExample.MixProject do
         "tailwind liveview_example --minify",
         "esbuild liveview_example --minify",
         "phx.digest"
-      ]
+      ],
+      server: "phx.server"
     ]
   end
 end
