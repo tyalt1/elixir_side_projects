@@ -4,7 +4,7 @@ defmodule PodcastTranscriber do
   """
 
   alias PodcastTranscriber.Podcast.Episode
-  alias PodcastTranscriber.Podcast.Transcriber
+  import PodcastTranscriber.Podcast.Transcriber, only: [audio_to_text: 1]
 
   def latest_episode_transcription do
     rss_feed_url = "https://feeds.fireside.fm/elixiroutlaws/rss"
@@ -15,9 +15,11 @@ defmodule PodcastTranscriber do
     transcription_text = """
     ## Transcription
 
-    #{Transcriber.audio_to_text(latest_episode_file)}
+    #{audio_to_text(latest_episode_file)}
     """
 
-    IO.puts(Episode.to_text(latest_episode, transcription_text))
+    episode_text = Episode.to_text(latest_episode, transcription_text)
+
+    IO.puts(episode_text)
   end
 end

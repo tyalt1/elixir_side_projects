@@ -21,8 +21,8 @@ defmodule PodcastTranscriber.Podcast.Episode do
   end
 
   @spec local_file(t()) :: binary()
-  def local_file(%Episode{url: url, show_title: show_title, episode_title: episode_title}) do
-    local_file(url, Path.join(show_title, episode_title))
+  def local_file(%Episode{url: url, show_title: show_title}) do
+    local_file(url, show_title)
   end
 
   @spec local_file(binary(), binary()) :: binary()

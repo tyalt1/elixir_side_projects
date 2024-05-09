@@ -1,4 +1,6 @@
 defmodule PodcastTranscriber.Podcast.Transcriber do
+  require Logger
+
   @type transcription_chunk :: %{
           text: binary(),
           start_timestamp_seconds: float(),
@@ -10,37 +12,39 @@ defmodule PodcastTranscriber.Podcast.Transcriber do
           transcription_processing_seconds: integer()
         }
 
-  @spec audio_to_chunks(binary()) :: audio_to_chunks_return()
-  def audio_to_chunks(audio_file) do
-    audio_to_chunks(speech_to_text_server(), audio_file)
+  def child_spec do
+    {Nx.Serving, name: PodcastTranscriber.Whisper, serving: speech_to_text_server()}
+  end
+
+  def start_link do
+    {_, opts} = child_spec()
+    Nx.Serving.start_link(opts)
   end
 
   @doc """
   Convert audio to chuncks. Takes audio file path.
   """
-  @spec audio_to_chunks(Nx.Serving.t(), binary()) :: audio_to_chunks_return()
-  def audio_to_chunks(server, audio_file) do
+  @spec audio_to_chunks(binary()) :: audio_to_chunks_return()
+  def audio_to_chunks(audio_file) do
     start_time = DateTime.utc_now()
-    transcription_output = Nx.Serving.run(server, {:file, audio_file})
+    transcription_output = Nx.Serving.batched_run(PodcastTranscriber.Whisper, {:file, audio_file})
     end_time = DateTime.utc_now()
+    seconds = DateTime.diff(end_time, start_time)
+
+    Logger.info("generated transcription", transcription_processing_seconds: seconds)
 
     %{
       transcription: transcription_output.chunks,
-      transcription_processing_seconds: DateTime.diff(end_time, start_time)
+      transcription_processing_seconds: seconds
     }
-  end
-
-  @spec audio_to_text(binary()) :: binary()
-  def audio_to_text(audio_file) do
-    audio_to_text(speech_to_text_server(), audio_file)
   end
 
   @doc """
   Convert audio to text. Takes audio file path.
   """
-  @spec audio_to_text(Nx.Serving.t(), binary()) :: binary()
-  def audio_to_text(server, audio_file) do
-    %{transcription: transcription} = audio_to_chunks(server, audio_file)
+  @spec audio_to_text(binary()) :: binary()
+  def audio_to_text(audio_file) do
+    %{transcription: transcription} = audio_to_chunks(audio_file)
 
     chunk_to_line = fn chunk ->
       "- #{timestamp_hhmmss(chunk.start_timestamp_seconds)} | #{chunk.text}\n"
@@ -57,12 +61,13 @@ defmodule PodcastTranscriber.Podcast.Transcriber do
   """
   @spec speech_to_text_server() :: Nx.Serving.t()
   def speech_to_text_server do
-    {:ok, whisper} = Bumblebee.load_model({:hf, "openai/whisper-tiny"})
-    {:ok, featurizer} = Bumblebee.load_featurizer({:hf, "openai/whisper-tiny"})
-    {:ok, tokenizer} = Bumblebee.load_tokenizer({:hf, "openai/whisper-tiny"})
-    {:ok, generation_config} = Bumblebee.load_generation_config({:hf, "openai/whisper-tiny"})
+    whisper = {:hf, "openai/whisper-tiny"}
+    {:ok, model_info} = Bumblebee.load_model(whisper)
+    {:ok, featurizer} = Bumblebee.load_featurizer(whisper)
+    {:ok, tokenizer} = Bumblebee.load_tokenizer(whisper)
+    {:ok, generation_config} = Bumblebee.load_generation_config(whisper)
 
-    Bumblebee.Audio.speech_to_text_whisper(whisper, featurizer, tokenizer, generation_config,
+    Bumblebee.Audio.speech_to_text_whisper(model_info, featurizer, tokenizer, generation_config,
       defn_options: [compiler: EXLA],
       chunk_num_seconds: 30,
       timestamps: :segments
