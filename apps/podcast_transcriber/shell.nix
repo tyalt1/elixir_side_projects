@@ -6,13 +6,13 @@ pkgs.mkShellNoCC {
   ];
 
   shellHook = ''
-  echo "Erlang/Elixir version"
-  elixir -v
-
+  # echo "Erlang/Elixir version"
+  # elixir -v
   echo "Running ..."
-  mix run -e "PodcastTranscriber.latest_episode_transcription"
-
-  echo "Done"
-  exit
+  # mix run -e "PodcastTranscriber.latest_episode_transcription"
+  # echo "Done"
+  # exit
+  
+  iex -S mix
   '';
 }
