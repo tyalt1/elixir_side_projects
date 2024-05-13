@@ -10,7 +10,7 @@ defmodule PodcastTranscriber do
     rss_feed_url = "https://feeds.fireside.fm/elixiroutlaws/rss"
 
     latest_episode = rss_feed_url |> Episode.episodes_from_rss_url() |> Enum.at(0)
-    latest_episode_file = Episode.local_file(latest_episode)
+    latest_episode_file = latest_episode.url
 
     transcription_text = """
     ## Transcription
