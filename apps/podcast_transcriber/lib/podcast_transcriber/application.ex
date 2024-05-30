@@ -7,7 +7,7 @@ defmodule PodcastTranscriber.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      Transcriber.child_spec()
+      {Transcriber, stream: false}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: __MODULE__)

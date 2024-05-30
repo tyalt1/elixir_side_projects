@@ -12,8 +12,9 @@ defmodule PodcastTranscriber.Podcast.Transcriber do
           transcription_processing_seconds: integer()
         }
 
-  def child_spec do
-    {Nx.Serving, name: PodcastTranscriber.Whisper, serving: speech_to_text_server()}
+  @spec child_spec(keyword()) :: Supervisor.child_spec()
+  def child_spec(opts) do
+    Nx.Serving.child_spec(name: PodcastTranscriber.Whisper, serving: speech_to_text_server(opts))
   end
 
   @doc """
@@ -22,10 +23,13 @@ defmodule PodcastTranscriber.Podcast.Transcriber do
   @spec audio_to_chunks(binary()) :: audio_to_chunks_return()
   def audio_to_chunks(audio_file) do
     start_time = DateTime.utc_now()
-    serving_input = case String.contains?(audio_file, "http") do
-      true -> {:file_url, audio_file}
-      false -> {:file, audio_file}
-    end
+
+    serving_input =
+      case String.contains?(audio_file, "http") do
+        true -> {:file_url, audio_file}
+        false -> {:file, audio_file}
+      end
+
     transcription_output = Nx.Serving.batched_run(PodcastTranscriber.Whisper, serving_input)
     end_time = DateTime.utc_now()
     seconds = DateTime.diff(end_time, start_time)
@@ -42,8 +46,8 @@ defmodule PodcastTranscriber.Podcast.Transcriber do
   Convert audio to text. Takes audio file path.
   """
   @spec audio_to_text(binary()) :: binary()
-  def audio_to_text(audio_file) do
-    %{transcription: transcription} = audio_to_chunks(audio_file)
+  def audio_to_text(audio_file_url) do
+    %{transcription: transcription} = audio_to_chunks(audio_file_url)
 
     chunk_to_line = fn chunk ->
       "- #{timestamp_hhmmss(chunk.start_timestamp_seconds)} | #{chunk.text}\n"
@@ -102,6 +106,8 @@ defmodule PodcastTranscriber.Podcast.Transcriber do
     end)
   end
 
+  # --- UTIL ---
+
   defp download_file(url) do
     download_directory = Path.join(System.tmp_dir!(), "downloads")
     File.mkdir_p!(download_directory)
@@ -113,8 +119,6 @@ defmodule PodcastTranscriber.Podcast.Transcriber do
       {:ok, out_path}
     end
   end
-
-  # --- UTIL ---
 
   # timestamp(0.0) => "00:00:00"
   # timestamp(2896.4) => "00:48:16"
