@@ -54,30 +54,26 @@ defmodule LiveviewExampleWeb.Counter do
     """
   end
 
-  defp noreply(socket), do: {:noreply, socket}
-
   @doc false
   @impl true
   @spec handle_event(binary(), map(), Phoenix.LiveView.Socket.t()) ::
           {:noreply, Phoenix.LiveView.Socket.t()}
   def handle_event("inc", _unsigned_params, socket) do
-    socket
-    |> update(:counter, fn x -> x + 1 end)
-    |> noreply()
+    inc = fn x -> x + 1 end
+
+    {:noreply, update(socket, :counter, inc)}
   end
 
   def handle_event("dec", _unsigned_params, socket) do
-    socket
-    |> update(:counter, fn
+    dec = fn
       x when x <= 0 -> 0
       x -> x - 1
-    end)
-    |> noreply()
+    end
+
+    {:noreply, update(socket, :counter, dec)}
   end
 
   def handle_event("reset", _unsigned_params, socket) do
-    socket
-    |> assign(counter: 0)
-    |> noreply()
+    {:noreply, assign(socket, counter: 0)}
   end
 end
